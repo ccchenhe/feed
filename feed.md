@@ -526,25 +526,25 @@ dmt，生命周期548天
 
 # 表物理结构
 ## ODS
-|表名|功能描述|更新频率|数据来源|生命周期|
-|--|--|--|--|--|
-|feed_mart_ods_traffic_feed_impression_hi|feed业务埋点曝光事件小时增量表|小时增量|埋点SDK，其他团队预处理|7天|
-|feed_mart_ods_traffic_feed_click_hi|feed业务埋点点击事件小时增量表|小时增量|埋点SDK，其他团队预处理|7天|
-|feed_mart_ods_traffic_feed_view_hi|feed业务埋点访问事件小时增量表|小时增量|埋点SDK，其他团队预处理|7天|
-|feed_mart_ods_traffic_atc_buynow_hi|feed业务埋点加购事件小时增量表|小时增量|埋点SDK，其他团队预处理|7天|
-|ods_feed_db__comment_reply_like_tab_hf|feed评论点赞表|小时更新|业务团队|无快照，永久|
-|ods_feed_db__comment_reply_tab_hf|feed评论回复表|小时更新|业务团队|无快照，永久|
-|ods_feed_db__comment_tab_hf|feed评论表|小时更新|业务团队|无快照，永久|
-|ods_feed_db__like_tab_hf|feed点赞表|小时更新|业务团队|无快照，永久|
-|ods_feed_db__hashtag_tab_hf|hashtag话题明细表|小时更新|业务团队|无快照，永久|
-|ods_feed_db__hashtag_feed_tab_hf|feed <-> hashtag关联关系表|小时更新|业务团队|无快照，永久|
-|ods_feed_db__feed_meta_tab_hf| feed 基础信息表|小时更新|业务团队|无快照，永久|
-|ods_feed_db__feed_content_tab_hf| feed正文/图片 存储表|小时更新|业务团队|无快照，永久|
-|ods_feed_db__push_msg_tab_hf| feed 推送表|小时更新|业务团队|无快照，永久|
-|ods_feed_db__following_hashtag_tab_hf| user <-> hashtag关联关系表|小时更新|业务团队|无快照，永久|
-|ods_feed_db__follow_flow_tab_hf| user关注发贴或作者关联关系表|小时更新|业务团队|无快照，永久|
-|ods_feed_db__multitabs_contents_tab_hf|运营人工干预配置表，用于高亮置顶post或hashtag|小时更新|业务团队|无快照，永久|
-| ods_mkt__feed_official_accounts_df|官方账户配置表(主要用于带货，导流)|人工配置，天级更新|业务团队|快照，7天|
+|表名|功能描述|更新频率|生命周期|
+|--|--|--|--|
+|feed_mart_ods_traffic_feed_impression_hi|feed业务埋点曝光事件小时增量表|小时增量|7天|
+|feed_mart_ods_traffic_feed_click_hi|feed业务埋点点击事件小时增量表|小时增量|7天|
+|feed_mart_ods_traffic_feed_view_hi|feed业务埋点访问事件小时增量表|小时增量|7天|
+|feed_mart_ods_traffic_atc_buynow_hi|feed业务埋点加购事件小时增量表|小时增量|7天|
+|ods_feed_db__comment_reply_like_tab_hf|feed评论点赞表|小时更新|无快照，永久|
+|ods_feed_db__comment_reply_tab_hf|feed评论回复表|小时更新|无快照，永久|
+|ods_feed_db__comment_tab_hf|feed评论表|小时更新|无快照，永久|
+|ods_feed_db__like_tab_hf|feed点赞表|小时更新|无快照，永久|
+|ods_feed_db__hashtag_tab_hf|hashtag话题明细表|小时更新|无快照，永久|
+|ods_feed_db__hashtag_feed_tab_hf|feed <-> hashtag关联关系表|小时更新|无快照，永久|
+|ods_feed_db__feed_meta_tab_hf| feed 基础信息表|小时更新|无快照，永久|
+|ods_feed_db__feed_content_tab_hf| feed正文/图片 存储表|小时更新|无快照，永久|
+|ods_feed_db__push_msg_tab_hf| feed 推送表|小时更新|无快照，永久|
+|ods_feed_db__following_hashtag_tab_hf| user <-> hashtag关联关系表|小时更新|无快照，永久|
+|ods_feed_db__follow_flow_tab_hf| user关注发贴或作者关联关系表|小时更新|无快照，永久|
+|ods_feed_db__multitabs_contents_tab_hf|运营人工干预配置表，用于高亮置顶post或hashtag|小时更新|无快照，永久|
+| ods_mkt__feed_official_accounts_df|官方账户配置表(主要用于带货，导流)|人工配置，天级更新|快照，7天|
                                                                                                                                                                                                                                                                                                                                                                          
 
 ## DW
