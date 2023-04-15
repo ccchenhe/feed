@@ -521,35 +521,41 @@ dmt，生命周期548天
 
 ## 如何定义浏览一篇帖子
 1. 封面的曝光，因为没有内容的露出，所以不算有效访问
-2. 帖子内容的曝光，即有内容的露出，或直接访问帖子详情页，算有效访问
+
+![封面](https://upload-images.jianshu.io/upload_images/13491351-df9da7e81613a152.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+2. 帖子内容的曝光，即有内容的露出（占屏幕1/3），或直接访问帖子详情页，算有效访问
+
+![帖子](https://upload-images.jianshu.io/upload_images/13491351-48037d0c8377fc09.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
 # 表物理结构
+因业务间存在差异，故不详细阐述各层表物理结构和具体加工逻辑。仅对各层级的主要工作内容进行汇总
 ## ODS
-|表名|功能描述|更新频率|生命周期|
-|--|--|--|--|
-|feed_mart_ods_traffic_feed_impression_hi|feed业务埋点曝光事件小时增量表|小时增量|7天|
-|feed_mart_ods_traffic_feed_click_hi|feed业务埋点点击事件小时增量表|小时增量|7天|
-|feed_mart_ods_traffic_feed_view_hi|feed业务埋点访问事件小时增量表|小时增量|7天|
-|feed_mart_ods_traffic_atc_buynow_hi|feed业务埋点加购事件小时增量表|小时增量|7天|
-|ods_feed_db__comment_reply_like_tab_hf|feed评论点赞表|小时更新|无快照，永久|
-|ods_feed_db__comment_reply_tab_hf|feed评论回复表|小时更新|无快照，永久|
-|ods_feed_db__comment_tab_hf|feed评论表|小时更新|无快照，永久|
-|ods_feed_db__like_tab_hf|feed点赞表|小时更新|无快照，永久|
-|ods_feed_db__hashtag_tab_hf|hashtag话题明细表|小时更新|无快照，永久|
-|ods_feed_db__hashtag_feed_tab_hf|feed <-> hashtag关联关系表|小时更新|无快照，永久|
-|ods_feed_db__feed_meta_tab_hf| feed 基础信息表|小时更新|无快照，永久|
-|ods_feed_db__feed_content_tab_hf| feed正文/图片 存储表|小时更新|无快照，永久|
-|ods_feed_db__push_msg_tab_hf| feed 推送表|小时更新|无快照，永久|
-|ods_feed_db__following_hashtag_tab_hf| user <-> hashtag关联关系表|小时更新|无快照，永久|
-|ods_feed_db__follow_flow_tab_hf| user关注发贴或作者关联关系表|小时更新|无快照，永久|
-|ods_feed_db__multitabs_contents_tab_hf|运营人工干预配置表，用于高亮置顶post或hashtag|小时更新|无快照，永久|
-| ods_mkt__feed_official_accounts_df|官方账户配置表(主要用于带货，导流)|人工配置，天级更新|快照，7天|
+无论是埋点还是业务库binlog，数据流向均先落入kafka，再从kafka消费到hdfs/hudi
+
+**流式消费的目的**
+1. 确保数据来源一致，为后续流计算相关奠定基础，避免lambda两套来源、两套体系导致的潜在的数据一致性风险
+2. 为下游层级计算做存储加速。如有小时级的业务诉求，不必额外起实时任务
+3. 不必额外做以前cdc存增量任务合并的ETL过程
+
+**数据丢失**
+1. 由负责抽取binlog/nginx log的team保障
+2. 对于cdc类，点查业务从库做DQC
+3. 统一为at least once的消费策略下，埋点类在DW完成去重，cdc类借助upsert功能完成去重
+
+**数据补偿**
+1. 埋点类数据通过offset回拨再消费
+2. cdc类数据额外sink一份到hdfs，在丢失时，通过hdfs文件回放进行补偿
+
+![e.g.](https://upload-images.jianshu.io/upload_images/13491351-c7a79e25366879c9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
                                                                                                                                                                                                                                                                                                                                                                          
 
 ## DW
 ### ETL
 - 过滤测试user_id
+- 过滤重复记录
 - 对异常user_id的处理（例如游客，user_id is null, 赋default值）
 - 细化二级分区。例如基于埋点事件的分析，基础条件大多基于页面（例如某主页，某详情页），为了减少IO，去除ODS的小时分区，细化为以page_type为分区
 - 对event_time的处理，从UTC统一转化为当地时区，便于下游使用
@@ -557,13 +563,14 @@ dmt，生命周期548天
 - 复杂数据结构打横
 - 基于埋点对上下文（用户路径的拼接）
 ![用户路径](https://upload-images.jianshu.io/upload_images/13491351-2af7ed845c4d71b2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
-- 处理订单表，分割当日增量和历史全量
+- 对累计快照事实表（如订单）分割当日增量和历史全量
 
 ### 退维
 对于高频聚合、查询、关联的不变化的维度属性，退化到DW，以适度冗余为代价，提升查询效率
 - 例如埋点事件中，帖子的曝光。帖子的作者id，帖子的类型（图文，视频...）等高频且稳定的属性下沉到DW
 
-- 对易变动的维度属性，或维度属性较多的情况，下沉外键。例如帖子中提到的商品，埋点中并未上报，由维表关联出商品item_id并冗余，便于后续对商品（例如类目、品牌）的分析查询
+### 外键
+对易变动的维度属性，或维度属性较多的情况，或在不确定后续的分析主题时，下沉/保留外键。例如帖子中提到的商品，埋点中并未上报，由维表关联出商品item_id并冗余，便于后续对商品（例如类目、品牌）的分析查询
 
 
 ### 公共逻辑下沉
@@ -622,15 +629,31 @@ group by grass_date;
 
 ![下沉逻辑](https://upload-images.jianshu.io/upload_images/13491351-6ed5605c67b0d876.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
+## DIM
+### 缓慢变化维
+1. 全量存储
+2. 拉链表
+
+### 维度一致性
+1. 确保属性的数据类型和列名一致
+2. 同一属性在不同维表中不会歧义
+
+### 垂直拆分
+维表存在大量属性不被使用，或由于承载过多属性字段导致查询变慢，则需要考虑对字段进行拆分，创建多个维表
 
 ## DM
-### viewer粒度轻量聚合表
+### 轻量聚合表
 - 结合数据域和主题域，将不同或相同的数据域下的DWD模型融合
 - 面向业务分析，粒度相似的数据进行融合，做宽表处理
 - 实现主题数据的深度汇总，对衍生指标的加工和沉淀
 - 结合数据分析和应用场景，提供可复用模型
 
+
+如以下的层级关系，通俗而言，如对于发帖表现的业务分析类需求，粒度从细到粗依次为某帖子的表现（订单、流量、互动...） -> 某作者 -> 某帖子种类 -> 某页面 -> 大盘
 ![层级关系](https://upload-images.jianshu.io/upload_images/13491351-b111b4fabd81acd0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+因此，我们对此类场景进行抽象，合并多业务过程，做最细粒度的轻量聚合（如user在某页面的某tab栏的某篇帖子的曝光、点击次数），承上可以很好的保证DWD的封闭性，不必每次从DWD取数跨过程join、不必需要考虑计算口径的变更等。启下可以以此层为基础，衍生帖子相关的统计指标
 
 ![表层级关系](https://upload-images.jianshu.io/upload_images/13491351-8185d9cdda9aa59b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
